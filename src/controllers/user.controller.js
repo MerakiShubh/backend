@@ -86,7 +86,6 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found");
   }
 
-  // Verify password
   const isPasswordValid = await user.isPasswordCorrect(password);
 
   if (!isPasswordValid) {
@@ -96,17 +95,20 @@ const loginUser = asyncHandler(async (req, res) => {
   const accessToken = user.generateAccessToken();
   const refreshToken = user.generateRefreshToken();
 
+  // Set refresh token as an HttpOnly cookie
+  res.setHeader("Set-Cookie", [
+    `refreshToken=${refreshToken}; Max-Age=${
+      15 * 24 * 60 * 60
+    }; Path=/; HttpOnly; Secure; SameSite=None`,
+  ]);
+
   return res.status(200).json({
     success: true,
-    data: { user, accessToken, refreshToken },
+    data: { user, accessToken },
   });
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
-  //findUser from req.user which comes from middleware
-  //delete cookies
-  //remove access token and refresh token
-
   const userId = req.user._id;
 
   await User.findByIdAndUpdate(
